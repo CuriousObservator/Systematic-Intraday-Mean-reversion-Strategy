@@ -1,0 +1,161 @@
+
+<div style="padding:1rem 0;">
+
+<div id="kpi-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:1.5rem;"></div>
+
+<p style="font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--color-text-tertiary);margin:0 0 8px;">Equity curve</p>
+<div style="position:relative;width:100%;height:200px;margin-bottom:1.5rem;">
+  <canvas id="eqChart" role="img" aria-label="Cumulative equity growth 2015 to 2026">Equity growth from 1x in 2015.</canvas>
+</div>
+
+<hr style="border:none;border-top:0.5px solid var(--color-border-tertiary);margin:1.5rem 0 1rem;">
+<p style="font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--color-text-tertiary);margin:0 0 6px;">Monthly returns heatmap</p>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;font-size:11px;color:var(--color-text-secondary);">
+  <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#085041;display:inline-block;"></span>&gt;+15%</span>
+  <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#1D9E75;display:inline-block;"></span>+5–15%</span>
+  <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#9FE1CB;display:inline-block;"></span>0–5%</span>
+  <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#F5C4B3;display:inline-block;"></span>0 to −5%</span>
+  <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#D85A30;display:inline-block;"></span>&lt;−5%</span>
+</div>
+<div style="overflow-x:auto;"><table id="heatmap" style="border-collapse:separate;border-spacing:3px;font-size:10px;font-family:var(--font-mono);"></table></div>
+
+<hr style="border:none;border-top:0.5px solid var(--color-border-tertiary);margin:1.5rem 0 1rem;">
+<p style="font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--color-text-tertiary);margin:0 0 8px;">Yearly performance</p>
+<div id="yr-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;"></div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const MO = [
+["2015-01",0.00864],["2015-02",0.07036],["2015-03",0.17027],["2015-04",0.52355],["2015-05",-0.11565],["2015-06",0.12567],
+["2015-07",0.04686],["2015-08",0.04562],["2015-09",0.27609],["2015-10",0.14335],["2015-11",0.25426],["2015-12",0.19883],
+["2016-01",0.11373],["2016-02",0.15319],["2016-03",0.03238],["2016-04",0.09235],["2016-05",-0.07080],["2016-06",-0.02124],
+["2016-07",0.36368],["2016-08",-0.12904],["2016-09",0.11705],["2016-10",-0.02339],["2016-11",0.05111],["2016-12",0.00224],
+["2017-01",-0.02363],["2017-02",-0.08279],["2017-03",-0.04618],["2017-04",0.06486],["2017-05",-0.09601],["2017-06",0.20607],
+["2017-07",0.08814],["2017-08",-0.04053],["2017-09",-0.03609],["2017-10",-0.10792],["2017-11",0.23040],["2017-12",0.13073],
+["2018-01",0.14720],["2018-02",0.18090],["2018-03",0.13636],["2018-04",0.04185],["2018-05",-0.17235],["2018-06",0.15497],
+["2018-07",0.05891],["2018-08",0.01545],["2018-09",-0.00597],["2018-10",0.04226],["2018-11",0.01649],["2018-12",0.23144],
+["2019-01",0.20893],["2019-02",-0.02698],["2019-03",0.07903],["2019-04",-0.02356],["2019-05",0.12107],["2019-06",0.01273],
+["2019-07",-0.05558],["2019-08",0.11614],["2019-09",0.03705],["2019-10",0.22934],["2019-11",0.09771],["2019-12",0.08041],
+["2020-01",-0.04030],["2020-02",0.00523],["2020-03",0.19889],["2020-04",-0.00534],["2020-05",0.12633],["2020-06",0.18259],
+["2020-07",-0.06807],["2020-08",0.20198],["2020-09",0.12680],["2020-10",-0.03152],["2020-11",0.13730],["2020-12",-0.02899],
+["2021-01",0.14405],["2021-02",-0.06503],["2021-03",0.05896],["2021-04",0.01443],["2021-05",0.05186],["2021-06",0.12867],
+["2021-07",0.24791],["2021-08",0.16932],["2021-09",0.10574],["2021-10",-0.02054],["2021-11",0.09354],["2021-12",0.01871],
+["2022-01",0.20984],["2022-02",0.00016],["2022-03",0.12459],["2022-04",-0.13918],["2022-05",-0.13611],["2022-06",0.04228],
+["2022-07",-0.10506],["2022-08",0.01166],["2022-09",0.09110],["2022-10",0.01929],["2022-11",0.07610],["2022-12",-0.01758],
+["2023-01",0.01505],["2023-02",0.00762],["2023-03",0.12372],["2023-04",0.11448],["2023-05",0.04423],["2023-06",0.07465],
+["2023-07",-0.05353],["2023-08",0.03438],["2023-09",-0.04259],["2023-10",0.16081],["2023-11",0.13411],["2023-12",0.24601],
+["2024-01",-0.18491],["2024-02",-0.14615],["2024-03",0.14275],["2024-04",0.00230],["2024-05",-0.00495],["2024-06",-0.05826],
+["2024-07",0.03740],["2024-08",0.07864],["2024-09",0.00092],["2024-10",-0.04094],["2024-11",-0.02296],["2024-12",0.18372],
+["2025-01",-0.06338],["2025-02",0.13709],["2025-03",0.20220],["2025-04",0.15284],["2025-05",0.15331],["2025-06",0.01021],
+["2025-07",-0.17849],["2025-08",-0.00630],["2025-09",0.00294],["2025-10",-0.01913],["2025-11",0.03379],["2025-12",0.02927],
+["2026-01",-0.10190],["2026-02",-0.05214],["2026-03",-0.05112],["2026-04",-0.00602]
+];
+
+const YR = [
+  {y:2015,t:734,wr:0.6022},{y:2016,t:812,wr:0.5850},{y:2017,t:463,wr:0.5875},
+  {y:2018,t:802,wr:0.6072},{y:2019,t:593,wr:0.5261},{y:2020,t:2507,wr:0.5225},
+  {y:2021,t:964,wr:0.5405},{y:2022,t:1171,wr:0.5448},{y:2023,t:518,wr:0.4846},
+  {y:2024,t:793,wr:0.5322},{y:2025,t:696,wr:0.6178},{y:2026,t:616,wr:0.5308}
+];
+
+const p = (v,d=1) => (v>=0?'+':'')+(v*100).toFixed(d)+'%';
+
+let cum = 1;
+const eqLabels = [], eqVals = [];
+MO.forEach(([dt,r]) => { cum*=(1+r); eqLabels.push(dt); eqVals.push(+cum.toFixed(4)); });
+
+const allR = MO.map(d=>d[1]);
+const avgR = allR.reduce((a,b)=>a+b,0)/allR.length;
+const stdR = Math.sqrt(allR.map(r=>(r-avgR)**2).reduce((a,b)=>a+b,0)/allR.length);
+const sharpe = ((avgR/stdR)*Math.sqrt(12)).toFixed(2);
+const totalRet = cum-1;
+let peak=0,maxDD=0;
+eqVals.forEach(v=>{ if(v>peak)peak=v; const d=(v-peak)/peak; if(d<maxDD)maxDD=d; });
+const posM = allR.filter(r=>r>0).length;
+
+const years = (eqLabels.length) / 12;
+const cagr = Math.pow(cum, 1/years) - 1;
+
+const kpis=[
+  {label:'CAGR',val:p(cagr,1),color:cagr>0?'#1D9E75':'#D85A30'},
+  {label:'Sharpe (monthly ann.)',val:sharpe,color:+sharpe>1?'#1D9E75':'var(--color-text-primary)'},
+  {label:'Max drawdown',val:p(maxDD,1),color:'#D85A30'},
+  {label:'Positive months',val:Math.round(posM/allR.length*100)+'%',color:'#1D9E75'},
+  {label:'Avg monthly',val:p(avgR,2),color:avgR>0?'#1D9E75':'#D85A30'},
+];
+const kr=document.getElementById('kpi-row');
+kpis.forEach(k=>{
+  const d=document.createElement('div');
+  d.style.cssText='background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px;';
+  d.innerHTML=`<p style="font-size:11px;color:var(--color-text-tertiary);margin:0 0 4px;">${k.label}</p><p style="font-size:22px;font-weight:500;font-family:var(--font-mono);color:${k.color};margin:0;">${k.val}</p>`;
+  kr.appendChild(d);
+});
+
+const isDark=matchMedia('(prefers-color-scheme: dark)').matches;
+const gridC=isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)';
+const tickC=isDark?'#666':'#aaa';
+
+new Chart(document.getElementById('eqChart'),{
+  type:'line',
+  data:{labels:eqLabels,datasets:[{data:eqVals,borderColor:'#1D9E75',borderWidth:1.5,pointRadius:0,tension:0.2,
+    backgroundColor:isDark?'rgba(29,158,117,0.07)':'rgba(29,158,117,0.06)',fill:true}]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.parsed.y.toFixed(2)+'x'}}},
+    scales:{
+      x:{grid:{color:gridC},ticks:{color:tickC,font:{size:10},maxTicksLimit:12,maxRotation:0}},
+      y:{grid:{color:gridC},ticks:{color:tickC,font:{size:10},callback:v=>v.toFixed(1)+'x'}}
+    }}
+});
+
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const YEARS=[...new Set(MO.map(d=>d[0].slice(0,4)))];
+const lkp={};
+MO.forEach(([dt,r])=>lkp[dt]=r);
+
+function cellBg(r){
+  if(r===undefined) return isDark?'#222':'#f0eeea';
+  if(r>=0.15) return '#085041';
+  if(r>=0.05) return '#1D9E75';
+  if(r>=0.00) return '#9FE1CB';
+  if(r>=-0.05) return '#F5C4B3';
+  return '#D85A30';
+}
+function cellTxt(r){
+  if(r===undefined) return isDark?'#444':'#ccc';
+  if(r>=0.05) return '#E1F5EE';
+  if(r>=0.00) return '#085041';
+  return '#4A1B0C';
+}
+
+const tbl=document.getElementById('heatmap');
+let hdr='<tr><td style="width:28px;"></td>';
+YEARS.forEach(y=>hdr+=`<td style="text-align:center;color:var(--color-text-tertiary);font-size:10px;padding-bottom:3px;">${y}</td>`);
+tbl.innerHTML=hdr+'</tr>';
+
+MONTHS.forEach((m,mi)=>{
+  let row=`<tr><td style="color:var(--color-text-tertiary);font-size:10px;text-align:right;padding-right:4px;white-space:nowrap;">${m}</td>`;
+  YEARS.forEach(y=>{
+    const key=`${y}-${String(mi+1).padStart(2,'0')}`;
+    const r=lkp[key];
+    const bg=cellBg(r);
+    const tc=cellTxt(r);
+    const lbl=r!==undefined?(r>=0?'+':'')+Math.round(r*100)+'%':'';
+    row+=`<td style="width:40px;height:22px;background:${bg};color:${tc};text-align:center;border-radius:3px;font-size:9px;font-family:var(--font-mono);" title="${key}: ${lbl}">${lbl}</td>`;
+  });
+  tbl.innerHTML+=row+'</tr>';
+});
+
+const yg=document.getElementById('yr-grid');
+YR.forEach(d=>{
+  const ann=MO.filter(([dt])=>dt.startsWith(d.y)).reduce((a,[,r])=>a*(1+r),1)-1;
+  const c=ann>0?'#1D9E75':'#D85A30';
+  const card=document.createElement('div');
+  card.style.cssText='background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;';
+  card.innerHTML=`<p style="font-size:12px;color:var(--color-text-secondary);margin:0 0 3px;">${d.y}</p>
+    <p style="font-size:16px;font-weight:500;font-family:var(--font-mono);color:${c};margin:0 0 2px;">${p(ann,1)}</p>
+    <p style="font-size:10px;color:var(--color-text-tertiary);margin:0;">${d.t.toLocaleString()} trades &middot; ${Math.round(d.wr*100)}% win</p>`;
+  yg.appendChild(card);
+});
+</script>
