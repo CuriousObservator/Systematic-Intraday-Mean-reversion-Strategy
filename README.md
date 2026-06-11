@@ -1,6 +1,7 @@
 # Systematic-Intraday-Mean-reversion-Strategy
 A systematic, market-neutral intraday strategy for Indian equities, validated across 247,000+ observations spanning 11 years and multiple market regimes.
 
+DASHBOARD: https://curiousobservator.github.io/Systematic-Intraday-Mean-reversion-Strategy/
 
 ## Performance Summary
 
