@@ -1,161 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gap Fade — Realistic Deployment</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
 
-<div style="padding:1rem 0;">
+  :root{
+    --ink:#0d1117;
+    --panel:#13181f;
+    --panel2:#181e27;
+    --line:#262d38;
+    --paper:#e9e5da;
+    --paper-dim:#9aa3ad;
+    --gold:#d4a843;
+    --jade:#52a888;
+    --rust:#c0673e;
+    --jade-dim: rgba(82,168,136,0.12);
+    --rust-dim: rgba(192,103,62,0.12);
+    --serif:'Fraunces', serif;
+    --mono:'IBM Plex Mono', monospace;
+    --sans:'IBM Plex Sans', sans-serif;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--paper);
+    font-family:var(--sans);
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:980px; margin:0 auto; padding:0 28px 60px;}
 
-<div id="kpi-row" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:1.5rem;"></div>
+  /* ===== HEADER ===== */
+  .head{
+    padding:48px 0 32px;
+    border-bottom:1px solid var(--line);
+    position:relative;
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:11px; letter-spacing:.16em;
+    color:var(--gold); text-transform:uppercase; margin-bottom:14px;
+  }
+  h1{
+    font-family:var(--serif); font-weight:500; font-size:42px;
+    letter-spacing:-.01em; line-height:1.05; color:var(--paper);
+    max-width:680px;
+  }
+  .sub{
+    font-size:14px; color:var(--paper-dim); margin-top:12px; max-width:600px;
+    line-height:1.55;
+  }
+  .seal{
+    position:absolute; top:48px; right:0;
+    border:1px solid var(--gold); border-radius:50%;
+    width:108px; height:108px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center;
+  }
+  .seal .n{font-family:var(--mono); font-size:26px; color:var(--gold); font-weight:600; line-height:1;}
+  .seal .l{font-family:var(--mono); font-size:8px; color:var(--paper-dim); letter-spacing:.1em; margin-top:4px; text-transform:uppercase;}
 
-<p style="font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--color-text-tertiary);margin:0 0 8px;">Equity curve</p>
-<div style="position:relative;width:100%;height:200px;margin-bottom:1.5rem;">
-  <canvas id="eqChart" role="img" aria-label="Cumulative equity growth 2015 to 2026">Equity growth from 1x in 2015.</canvas>
+  /* ===== HERO STATS ===== */
+  .stats{
+    display:grid; grid-template-columns:repeat(5,1fr);
+    border:1px solid var(--line); margin-top:0;
+  }
+  .stat{
+    padding:20px 16px; border-right:1px solid var(--line);
+  }
+  .stat:last-child{border-right:none;}
+  .stat .k{font-family:var(--mono); font-size:9px; color:var(--paper-dim); text-transform:uppercase; letter-spacing:.1em; margin-bottom:8px;}
+  .stat .v{font-family:var(--mono); font-size:24px; font-weight:600; color:var(--paper); line-height:1;}
+  .stat .v.gold{color:var(--gold);}
+  .stat .v.jade{color:var(--jade);}
+  .stat .v.rust{color:var(--rust);}
+  .stat .d{font-family:var(--mono); font-size:9px; color:var(--paper-dim); margin-top:6px;}
+
+  /* ===== SECTION ===== */
+  .sec{padding:44px 0; border-bottom:1px solid var(--line);}
+  .sec:last-of-type{border-bottom:none;}
+  .sec-label{
+    font-family:var(--mono); font-size:10px; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--paper-dim); margin-bottom:18px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .sec-label::after{content:''; flex:1; height:1px; background:var(--line);}
+  h2{font-family:var(--serif); font-weight:500; font-size:24px; margin-bottom:6px; color:var(--paper);}
+  .sec-note{font-size:13px; color:var(--paper-dim); line-height:1.6; max-width:640px; margin-bottom:24px;}
+
+  /* ===== REALISTIC VS HYPO ===== */
+  .compare{
+    display:grid; grid-template-columns:1fr 1fr; gap:1px;
+    background:var(--line); border:1px solid var(--line);
+  }
+  .comp-col{background:var(--panel); padding:22px 24px;}
+  .comp-col.real{background:var(--panel2); border-left:3px solid var(--gold);}
+  .comp-title{font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:16px; color:var(--paper-dim);}
+  .comp-col.real .comp-title{color:var(--gold);}
+  .comp-row{display:flex; justify-content:space-between; padding:9px 0; border-bottom:1px solid var(--line); font-family:var(--mono); font-size:13px;}
+  .comp-row:last-child{border-bottom:none;}
+  .comp-row .lbl{color:var(--paper-dim);}
+  .comp-row .val{font-weight:600;}
+
+  /* ===== CHART CARD ===== */
+  .chart-card{background:var(--panel); border:1px solid var(--line); padding:20px 22px;}
+
+  /* ===== HEATMAP ===== */
+  .heatmap{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:11px;}
+  .heatmap th{font-weight:400; color:var(--paper-dim); padding:6px 4px; text-align:center; font-size:9px; text-transform:uppercase;}
+  .heatmap td{padding:8px 4px; text-align:center; border:1px solid var(--ink);}
+  .heatmap .yr{color:var(--paper-dim); text-align:left; padding-left:8px; font-weight:500;}
+
+  /* ===== TABLE ===== */
+  table.data{width:100%; border-collapse:collapse; font-family:var(--mono); font-size:12px;}
+  table.data th{
+    text-align:right; font-size:9px; color:var(--paper-dim); text-transform:uppercase;
+    letter-spacing:.06em; font-weight:500; padding:8px 10px; border-bottom:1px solid var(--line);
+  }
+  table.data th:first-child, table.data td:first-child{text-align:left;}
+  table.data td{padding:9px 10px; text-align:right; border-bottom:1px solid var(--line);}
+  table.data tr:last-child td{border-bottom:none;}
+  .pos{color:var(--jade);}
+  .neg{color:var(--rust);}
+
+  /* ===== TWO COL ===== */
+  .grid2{display:grid; grid-template-columns:1.3fr 1fr; gap:20px;}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr;} .stats{grid-template-columns:repeat(2,1fr);} .compare{grid-template-columns:1fr;} h1{font-size:30px;} .seal{display:none;}}
+
+  /* mini bars for long/short */
+  .barlist{display:flex; flex-direction:column; gap:14px;}
+  .barrow .top{display:flex; justify-content:space-between; font-family:var(--mono); font-size:12px; margin-bottom:6px;}
+  .bartrack{height:7px; background:var(--line); border-radius:2px; overflow:hidden;}
+  .barfill{height:100%; border-radius:2px;}
+
+  .footnote{font-family:var(--mono); font-size:10px; color:var(--paper-dim); line-height:1.7; padding-top:28px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="head">
+    <div class="eyebrow">Cross-Sectional Mean Reversion · NSE Equities</div>
+    <h1>Gap Fade —<br>Realistic Capital Deployment</h1>
+    <div class="sub">Overnight-gap reversion strategy across 118 NSE constituents, sized at 10% of live equity per position with a 10-position daily cap. 11-year backtest, 2015 – Apr 2026, net of 20 bps round-trip cost.</div>
+    <div class="seal"><div class="n">1.95</div><div class="l">Sharpe</div></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="k">CAGR</div><div class="v gold">29.0%</div><div class="d">vs 68.6% unconstrained</div></div>
+    <div class="stat"><div class="k">Max Drawdown</div><div class="v jade">−13.0%</div><div class="d">vs −34.4% unconstrained</div></div>
+    <div class="stat"><div class="k">Profit Factor</div><div class="v">1.31</div><div class="d">gross win / gross loss</div></div>
+    <div class="stat"><div class="k">Win Rate</div><div class="v">55.1%</div><div class="d">8,079 trades</div></div>
+    <div class="stat"><div class="k">Final Equity</div><div class="v">₹1.75Cr</div><div class="d">from ₹10L · 11.2yr</div></div>
+  </div>
+
+  <!-- WHY POSITION SIZING MATTERS -->
+  <div class="sec">
+    <div class="sec-label">Discipline vs. Raw Signal</div>
+    <h2>Sizing is the edge that survives</h2>
+    <div class="sec-note">The raw signal — equal-weighted across every qualifying gap, no capital constraint — produces a higher headline CAGR but a drawdown that would be unfundable. Capping exposure to 10 live positions at 10% of equity converts the same signal into something a real allocator could sit through.</div>
+    <div class="compare">
+      <div class="comp-col">
+        <div class="comp-title">Unconstrained (signal only)</div>
+        <div class="comp-row"><span class="lbl">CAGR</span><span class="val">68.6%</span></div>
+        <div class="comp-row"><span class="lbl">Sharpe</span><span class="val">1.92</span></div>
+        <div class="comp-row"><span class="lbl">Max Drawdown</span><span class="val neg">−34.4%</span></div>
+        <div class="comp-row"><span class="lbl">Capital limit</span><span class="val">None</span></div>
+      </div>
+      <div class="comp-col real">
+        <div class="comp-title">Realistic — ₹10L, max 10 positions</div>
+        <div class="comp-row"><span class="lbl">CAGR</span><span class="val">29.0%</span></div>
+        <div class="comp-row"><span class="lbl">Sharpe</span><span class="val">1.95</span></div>
+        <div class="comp-row"><span class="lbl">Max Drawdown</span><span class="val pos">−13.0%</span></div>
+        <div class="comp-row"><span class="lbl">Capital limit</span><span class="val">10% / trade, 10 max</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EQUITY + DRAWDOWN -->
+  <div class="sec">
+    <div class="sec-label">Equity & Drawdown</div>
+    <h2>₹10L → ₹1.75Cr</h2>
+    <div class="sec-note">Weekly-sampled equity curve, realistic deployment, 2015–2026. Drawdown panel below shares the same time axis.</div>
+    <div class="chart-card">
+      <canvas id="equityChart" height="110"></canvas>
+    </div>
+    <div class="chart-card" style="margin-top:1px; border-top:none;">
+      <canvas id="ddChart" height="60"></canvas>
+    </div>
+  </div>
+
+  <!-- YEARLY TABLE + LONG/SHORT -->
+  <div class="sec">
+    <div class="sec-label">Year-by-Year</div>
+    <div class="grid2">
+      <div>
+        <h2 style="font-size:19px;">Annual performance</h2>
+        <table class="data" style="margin-top:14px;">
+          <thead><tr><th>Year</th><th>Return</th><th>Sharpe</th><th>Max DD</th><th>Trades</th><th>Win%</th></tr></thead>
+          <tbody id="yearlyBody"></tbody>
+        </table>
+      </div>
+      <div>
+        <h2 style="font-size:19px;">Long vs. short</h2>
+        <div class="barlist" style="margin-top:18px;">
+          <div class="barrow">
+            <div class="top"><span>Long &nbsp;<span style="color:var(--paper-dim)">3,515 trades</span></span><span class="pos">53.0% WR</span></div>
+            <div class="bartrack"><div class="barfill" style="width:53%; background:var(--jade);"></div></div>
+          </div>
+          <div class="barrow">
+            <div class="top"><span>Short &nbsp;<span style="color:var(--paper-dim)">4,564 trades</span></span><span class="pos">56.6% WR</span></div>
+            <div class="bartrack"><div class="barfill" style="width:56.6%; background:var(--gold);"></div></div>
+          </div>
+        </div>
+        <div style="margin-top:28px; font-family:var(--mono); font-size:12px; color:var(--paper-dim); line-height:2;">
+          <div style="display:flex; justify-content:space-between;"><span>Avg win</span><span class="pos">+2.69%</span></div>
+          <div style="display:flex; justify-content:space-between;"><span>Avg loss</span><span class="neg">−2.48%</span></div>
+          <div style="display:flex; justify-content:space-between;"><span>Avg positions / day</span><span style="color:var(--paper)">3.6</span></div>
+          <div style="display:flex; justify-content:space-between;"><span>Capital deployed / day</span><span style="color:var(--paper)">~36%</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEATMAP -->
+  <div class="sec">
+    <div class="sec-label">Monthly Returns</div>
+    <h2 style="font-size:19px;">Seasonality &amp; consistency</h2>
+    <table class="heatmap" id="heatmapTable" style="margin-top:16px;"></table>
+  </div>
+
+  <div class="footnote">
+    Backtest, not live trading. Realistic deployment assumes ₹10,00,000 starting capital, 10% of current equity per position, maximum 10 concurrent positions, signals ranked by absolute gap size when more than 10 qualify on a given day, 20 bps round-trip transaction cost. Past performance does not indicate future results.
+  </div>
+
 </div>
 
-<hr style="border:none;border-top:0.5px solid var(--color-border-tertiary);margin:1.5rem 0 1rem;">
-<p style="font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--color-text-tertiary);margin:0 0 6px;">Monthly returns heatmap</p>
-<div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;font-size:11px;color:var(--color-text-secondary);">
-  <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#085041;display:inline-block;"></span>&gt;+15%</span>
-  <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#1D9E75;display:inline-block;"></span>+5–15%</span>
-  <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#9FE1CB;display:inline-block;"></span>0–5%</span>
-  <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#F5C4B3;display:inline-block;"></span>0 to −5%</span>
-  <span style="display:flex;align-items:center;gap:4px;"><span style="width:12px;height:12px;border-radius:2px;background:#D85A30;display:inline-block;"></span>&lt;−5%</span>
-</div>
-<div style="overflow-x:auto;"><table id="heatmap" style="border-collapse:separate;border-spacing:3px;font-size:10px;font-family:var(--font-mono);"></table></div>
-
-<hr style="border:none;border-top:0.5px solid var(--color-border-tertiary);margin:1.5rem 0 1rem;">
-<p style="font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--color-text-tertiary);margin:0 0 8px;">Yearly performance</p>
-<div id="yr-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;"></div>
-
-</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-const MO = [
-["2015-01",0.00864],["2015-02",0.07036],["2015-03",0.17027],["2015-04",0.52355],["2015-05",-0.11565],["2015-06",0.12567],
-["2015-07",0.04686],["2015-08",0.04562],["2015-09",0.27609],["2015-10",0.14335],["2015-11",0.25426],["2015-12",0.19883],
-["2016-01",0.11373],["2016-02",0.15319],["2016-03",0.03238],["2016-04",0.09235],["2016-05",-0.07080],["2016-06",-0.02124],
-["2016-07",0.36368],["2016-08",-0.12904],["2016-09",0.11705],["2016-10",-0.02339],["2016-11",0.05111],["2016-12",0.00224],
-["2017-01",-0.02363],["2017-02",-0.08279],["2017-03",-0.04618],["2017-04",0.06486],["2017-05",-0.09601],["2017-06",0.20607],
-["2017-07",0.08814],["2017-08",-0.04053],["2017-09",-0.03609],["2017-10",-0.10792],["2017-11",0.23040],["2017-12",0.13073],
-["2018-01",0.14720],["2018-02",0.18090],["2018-03",0.13636],["2018-04",0.04185],["2018-05",-0.17235],["2018-06",0.15497],
-["2018-07",0.05891],["2018-08",0.01545],["2018-09",-0.00597],["2018-10",0.04226],["2018-11",0.01649],["2018-12",0.23144],
-["2019-01",0.20893],["2019-02",-0.02698],["2019-03",0.07903],["2019-04",-0.02356],["2019-05",0.12107],["2019-06",0.01273],
-["2019-07",-0.05558],["2019-08",0.11614],["2019-09",0.03705],["2019-10",0.22934],["2019-11",0.09771],["2019-12",0.08041],
-["2020-01",-0.04030],["2020-02",0.00523],["2020-03",0.19889],["2020-04",-0.00534],["2020-05",0.12633],["2020-06",0.18259],
-["2020-07",-0.06807],["2020-08",0.20198],["2020-09",0.12680],["2020-10",-0.03152],["2020-11",0.13730],["2020-12",-0.02899],
-["2021-01",0.14405],["2021-02",-0.06503],["2021-03",0.05896],["2021-04",0.01443],["2021-05",0.05186],["2021-06",0.12867],
-["2021-07",0.24791],["2021-08",0.16932],["2021-09",0.10574],["2021-10",-0.02054],["2021-11",0.09354],["2021-12",0.01871],
-["2022-01",0.20984],["2022-02",0.00016],["2022-03",0.12459],["2022-04",-0.13918],["2022-05",-0.13611],["2022-06",0.04228],
-["2022-07",-0.10506],["2022-08",0.01166],["2022-09",0.09110],["2022-10",0.01929],["2022-11",0.07610],["2022-12",-0.01758],
-["2023-01",0.01505],["2023-02",0.00762],["2023-03",0.12372],["2023-04",0.11448],["2023-05",0.04423],["2023-06",0.07465],
-["2023-07",-0.05353],["2023-08",0.03438],["2023-09",-0.04259],["2023-10",0.16081],["2023-11",0.13411],["2023-12",0.24601],
-["2024-01",-0.18491],["2024-02",-0.14615],["2024-03",0.14275],["2024-04",0.00230],["2024-05",-0.00495],["2024-06",-0.05826],
-["2024-07",0.03740],["2024-08",0.07864],["2024-09",0.00092],["2024-10",-0.04094],["2024-11",-0.02296],["2024-12",0.18372],
-["2025-01",-0.06338],["2025-02",0.13709],["2025-03",0.20220],["2025-04",0.15284],["2025-05",0.15331],["2025-06",0.01021],
-["2025-07",-0.17849],["2025-08",-0.00630],["2025-09",0.00294],["2025-10",-0.01913],["2025-11",0.03379],["2025-12",0.02927],
-["2026-01",-0.10190],["2026-02",-0.05214],["2026-03",-0.05112],["2026-04",-0.00602]
+const heatmapData = {"2015": [0.0, 4.99, 8.18, 5.55, -1.67, 2.5, 3.26, 15.67, 1.17, 2.48, 7.72, 4.37], "2016": [3.05, -0.45, -0.84, 1.23, -2.32, 2.7, 3.98, -1.25, -0.28, 0.2, 3.24, 1.46], "2017": [-1.06, -1.1, -1.0, 0.89, -3.52, 2.34, 4.19, 2.55, -0.28, -11.53, 4.84, 6.5], "2018": [5.01, 14.2, 1.79, -3.56, -2.27, 1.44, 0.35, 2.63, -0.98, 6.56, 1.31, 7.11], "2019": [-0.07, 0.71, 4.71, -1.23, -6.55, 1.78, -1.35, 3.2, -0.83, -0.49, 0.87, 3.58], "2020": [3.32, -4.44, 20.99, -1.29, 10.77, 22.99, 0.79, 11.2, 0.95, -1.83, -2.12, 2.59], "2021": [3.08, -5.36, 3.77, 2.96, 6.72, 8.33, 7.57, 6.68, 3.8, 3.32, 2.29, 2.29], "2022": [3.7, 2.65, 7.71, -1.27, -1.96, 7.0, 0.37, 4.5, 3.0, 0.43, 1.76, 1.55], "2023": [-7.9, 4.64, 0.69, 2.18, -0.57, 1.08, -0.37, 4.0, 0.8, 2.68, -3.1, 6.67], "2024": [7.56, 1.51, 6.61, 3.55, -3.1, -5.56, 0.49, 3.12, 0.55, -0.27, 4.26, 4.94], "2025": [-1.25, 4.02, 3.55, 10.84, 7.66, 2.79, -2.21, -0.89, 0.94, -0.54, 0.31, 0.72], "2026": [-1.95, -0.75, -0.77, 1.38, null, null, null, null, null, null, null, null]};
+
+const yearlyRows = [
+{ year: 2015, ret: 68.2, sharpe: 5.31, dd: -2.5, trades: 603, wr: 63.0 },
+{ year: 2016, ret: 8.4, sharpe: 0.82, dd: -10.0, trades: 701, wr: 54.5 },
+{ year: 2017, ret: 1.6, sharpe: 0.21, dd: -13.0, trades: 490, wr: 57.3 },
+{ year: 2018, ret: 37.0, sharpe: 2.71, dd: -6.1, trades: 686, wr: 55.7 },
+{ year: 2019, ret: 4.9, sharpe: 0.44, dd: -10.4, trades: 605, wr: 52.6 },
+{ year: 2020, ret: 80.1, sharpe: 2.40, dd: -12.9, trades: 1228, wr: 53.8 },
+{ year: 2021, ret: 55.0, sharpe: 3.14, dd: -7.2, trades: 937, wr: 55.4 },
+{ year: 2022, ret: 33.0, sharpe: 2.54, dd: -8.8, trades: 806, wr: 55.5 },
+{ year: 2023, ret: 10.4, sharpe: 0.85, dd: -9.3, trades: 640, wr: 47.3 },
+{ year: 2024, ret: 25.3, sharpe: 1.71, dd: -12.0, trades: 684, wr: 57.5 },
+{ year: 2025, ret: 28.9, sharpe: 2.88, dd: -4.7, trades: 484, wr: 59.3 },
+{ year: 2026, ret: -1.7, sharpe: -0.85, dd: -3.8, trades: 215, wr: 44.7 },
 ];
 
-const YR = [
-  {y:2015,t:734,wr:0.6022},{y:2016,t:812,wr:0.5850},{y:2017,t:463,wr:0.5875},
-  {y:2018,t:802,wr:0.6072},{y:2019,t:593,wr:0.5261},{y:2020,t:2507,wr:0.5225},
-  {y:2021,t:964,wr:0.5405},{y:2022,t:1171,wr:0.5448},{y:2023,t:518,wr:0.4846},
-  {y:2024,t:793,wr:0.5322},{y:2025,t:696,wr:0.6178},{y:2026,t:616,wr:0.5308}
-];
-
-const p = (v,d=1) => (v>=0?'+':'')+(v*100).toFixed(d)+'%';
-
-let cum = 1;
-const eqLabels = [], eqVals = [];
-MO.forEach(([dt,r]) => { cum*=(1+r); eqLabels.push(dt); eqVals.push(+cum.toFixed(4)); });
-
-const allR = MO.map(d=>d[1]);
-const avgR = allR.reduce((a,b)=>a+b,0)/allR.length;
-const stdR = Math.sqrt(allR.map(r=>(r-avgR)**2).reduce((a,b)=>a+b,0)/allR.length);
-const sharpe = ((avgR/stdR)*Math.sqrt(12)).toFixed(2);
-const totalRet = cum-1;
-let peak=0,maxDD=0;
-eqVals.forEach(v=>{ if(v>peak)peak=v; const d=(v-peak)/peak; if(d<maxDD)maxDD=d; });
-const posM = allR.filter(r=>r>0).length;
-
-const years = (eqLabels.length) / 12;
-const cagr = Math.pow(cum, 1/years) - 1;
-
-const kpis=[
-  {label:'CAGR',val:p(cagr,1),color:cagr>0?'#1D9E75':'#D85A30'},
-  {label:'Sharpe (monthly ann.)',val:sharpe,color:+sharpe>1?'#1D9E75':'var(--color-text-primary)'},
-  {label:'Max drawdown',val:p(maxDD,1),color:'#D85A30'},
-  {label:'Positive months',val:Math.round(posM/allR.length*100)+'%',color:'#1D9E75'},
-  {label:'Avg monthly',val:p(avgR,2),color:avgR>0?'#1D9E75':'#D85A30'},
-];
-const kr=document.getElementById('kpi-row');
-kpis.forEach(k=>{
-  const d=document.createElement('div');
-  d.style.cssText='background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:12px 14px;';
-  d.innerHTML=`<p style="font-size:11px;color:var(--color-text-tertiary);margin:0 0 4px;">${k.label}</p><p style="font-size:22px;font-weight:500;font-family:var(--font-mono);color:${k.color};margin:0;">${k.val}</p>`;
-  kr.appendChild(d);
+// ── Yearly table ──
+const tbody = document.getElementById('yearlyBody');
+yearlyRows.forEach(r => {
+  const retClass = r.ret >= 0 ? 'pos' : 'neg';
+  const ddClass = 'neg';
+  tbody.innerHTML += `<tr>
+    <td>${r.year}${r.year===2026?'*':''}</td>
+    <td class="${retClass}">${r.ret>=0?'+':''}${r.ret.toFixed(1)}%</td>
+    <td>${r.sharpe.toFixed(2)}</td>
+    <td class="${ddClass}">${r.dd.toFixed(1)}%</td>
+    <td>${r.trades}</td>
+    <td>${r.wr.toFixed(1)}%</td>
+  </tr>`;
 });
 
-const isDark=matchMedia('(prefers-color-scheme: dark)').matches;
-const gridC=isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)';
-const tickC=isDark?'#666':'#aaa';
+// ── Heatmap ──
+function heatColor(v){
+  if(v===null) return 'background:#171c24; color:#3a4250;';
+  const intensity = Math.min(Math.abs(v)/12, 1);
+  if(v>=0) return `background:rgba(82,168,136,${0.08+intensity*0.55}); color:${intensity>0.4?'#0d1117':'#cfe8de'};`;
+  return `background:rgba(192,103,62,${0.08+intensity*0.55}); color:${intensity>0.4?'#0d1117':'#f0d9cb'};`;
+}
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const htable = document.getElementById('heatmapTable');
+let thead = '<tr><th></th>' + months.map(m=>`<th>${m}</th>`).join('') + '</tr>';
+let rows = '';
+Object.keys(heatmapData).forEach(yr=>{
+  const vals = heatmapData[yr];
+  rows += `<tr><td class="yr">${yr}</td>` + vals.map(v=>{
+    const txt = v===null ? '—' : (v>=0?'+':'')+v.toFixed(1);
+    return `<td style="${heatColor(v)}">${txt}</td>`;
+  }).join('') + '</tr>';
+});
+htable.innerHTML = thead + rows;
 
-new Chart(document.getElementById('eqChart'),{
+</script>
+<script>
+// Embedded equity/drawdown series (weekly-sampled) computed from raw trade log
+const eqLabels = ["2015-01", "2015-02", "2015-02", "2015-02", "2015-03", "2015-03", "2015-03", "2015-03", "2015-03", "2015-04", "2015-04", "2015-04", "2015-04", "2015-05", "2015-05", "2015-05", "2015-05", "2015-05", "2015-06", "2015-06", "2015-06", "2015-06", "2015-07", "2015-07", "2015-07", "2015-07", "2015-08", "2015-08", "2015-08", "2015-08", "2015-08", "2015-09", "2015-09", "2015-09", "2015-09", "2015-10", "2015-10", "2015-10", "2015-10", "2015-11", "2015-11", "2015-11", "2015-11", "2015-11", "2015-12", "2015-12", "2015-12", "2015-12", "2016-01", "2016-01", "2016-01", "2016-01", "2016-01", "2016-02", "2016-02", "2016-02", "2016-02", "2016-03", "2016-03", "2016-03", "2016-03", "2016-04", "2016-04", "2016-04", "2016-04", "2016-05", "2016-05", "2016-05", "2016-05", "2016-05", "2016-06", "2016-06", "2016-06", "2016-06", "2016-07", "2016-07", "2016-07", "2016-07", "2016-07", "2016-08", "2016-08", "2016-08", "2016-08", "2016-09", "2016-09", "2016-09", "2016-09", "2016-10", "2016-10", "2016-10", "2016-10", "2016-10", "2016-11", "2016-11", "2016-11", "2016-11", "2016-12", "2016-12", "2016-12", "2016-12", "2017-01", "2017-01", "2017-01", "2017-01", "2017-01", "2017-02", "2017-02", "2017-02", "2017-02", "2017-03", "2017-03", "2017-03", "2017-03", "2017-04", "2017-04", "2017-04", "2017-04", "2017-04", "2017-05", "2017-05", "2017-05", "2017-05", "2017-06", "2017-06", "2017-06", "2017-06", "2017-07", "2017-07", "2017-07", "2017-07", "2017-07", "2017-08", "2017-08", "2017-08", "2017-08", "2017-09", "2017-09", "2017-09", "2017-09", "2017-10", "2017-10", "2017-10", "2017-10", "2017-10", "2017-11", "2017-11", "2017-11", "2017-11", "2017-12", "2017-12", "2017-12", "2017-12", "2017-12", "2018-01", "2018-01", "2018-01", "2018-01", "2018-02", "2018-02", "2018-02", "2018-02", "2018-03", "2018-03", "2018-03", "2018-03", "2018-04", "2018-04", "2018-04", "2018-04", "2018-04", "2018-05", "2018-05", "2018-05", "2018-05", "2018-06", "2018-06", "2018-06", "2018-06", "2018-07", "2018-07", "2018-07", "2018-07", "2018-07", "2018-08", "2018-08", "2018-08", "2018-08", "2018-09", "2018-09", "2018-09", "2018-09", "2018-09", "2018-10", "2018-10", "2018-10", "2018-10", "2018-11", "2018-11", "2018-11", "2018-11", "2018-12", "2018-12", "2018-12", "2018-12", "2018-12", "2019-01", "2019-01", "2019-01", "2019-01", "2019-02", "2019-02", "2019-02", "2019-02", "2019-03", "2019-03", "2019-03", "2019-03", "2019-03", "2019-04", "2019-04", "2019-04", "2019-04", "2019-05", "2019-05", "2019-05", "2019-05", "2019-06", "2019-06", "2019-06", "2019-06", "2019-06", "2019-07", "2019-07", "2019-07", "2019-07", "2019-08", "2019-08", "2019-08", "2019-08", "2019-09", "2019-09", "2019-09", "2019-09", "2019-09", "2019-10", "2019-10", "2019-10", "2019-10", "2019-11", "2019-11", "2019-11", "2019-11", "2019-12", "2019-12", "2019-12", "2019-12", "2019-12", "2020-01", "2020-01", "2020-01", "2020-01", "2020-02", "2020-02", "2020-02", "2020-02", "2020-03", "2020-03", "2020-03", "2020-03", "2020-03", "2020-04", "2020-04", "2020-04", "2020-04", "2020-05", "2020-05", "2020-05", "2020-05", "2020-05", "2020-06", "2020-06", "2020-06", "2020-06", "2020-07", "2020-07", "2020-07", "2020-07", "2020-08", "2020-08", "2020-08", "2020-08", "2020-08", "2020-09", "2020-09", "2020-09", "2020-09", "2020-10", "2020-10", "2020-10", "2020-10", "2020-11", "2020-11", "2020-11", "2020-11", "2020-11", "2020-12", "2020-12", "2020-12", "2020-12", "2021-01", "2021-01", "2021-01", "2021-01", "2021-01", "2021-02", "2021-02", "2021-02", "2021-02", "2021-03", "2021-03", "2021-03", "2021-03", "2021-04", "2021-04", "2021-04", "2021-04", "2021-05", "2021-05", "2021-05", "2021-05", "2021-05", "2021-06", "2021-06", "2021-06", "2021-06", "2021-07", "2021-07", "2021-07", "2021-07", "2021-08", "2021-08", "2021-08", "2021-08", "2021-08", "2021-09", "2021-09", "2021-09", "2021-09", "2021-10", "2021-10", "2021-10", "2021-10", "2021-10", "2021-11", "2021-11", "2021-11", "2021-11", "2021-12", "2021-12", "2021-12", "2021-12", "2022-01", "2022-01", "2022-01", "2022-01", "2022-01", "2022-02", "2022-02", "2022-02", "2022-02", "2022-03", "2022-03", "2022-03", "2022-03", "2022-04", "2022-04", "2022-04", "2022-04", "2022-05", "2022-05", "2022-05", "2022-05", "2022-05", "2022-06", "2022-06", "2022-06", "2022-06", "2022-07", "2022-07", "2022-07", "2022-07", "2022-07", "2022-08", "2022-08", "2022-08", "2022-08", "2022-09", "2022-09", "2022-09", "2022-09", "2022-10", "2022-10", "2022-10", "2022-10", "2022-10", "2022-11", "2022-11", "2022-11", "2022-11", "2022-12", "2022-12", "2022-12", "2022-12", "2023-01", "2023-01", "2023-01", "2023-01", "2023-01", "2023-02", "2023-02", "2023-02", "2023-02", "2023-03", "2023-03", "2023-03", "2023-03", "2023-04", "2023-04", "2023-04", "2023-04", "2023-04", "2023-05", "2023-05", "2023-05", "2023-05", "2023-06", "2023-06", "2023-06", "2023-06", "2023-07", "2023-07", "2023-07", "2023-07", "2023-07", "2023-08", "2023-08", "2023-08", "2023-08", "2023-09", "2023-09", "2023-09", "2023-09", "2023-10", "2023-10", "2023-10", "2023-10", "2023-10", "2023-11", "2023-11", "2023-11", "2023-11", "2023-12", "2023-12", "2023-12", "2023-12", "2023-12", "2024-01", "2024-01", "2024-01", "2024-01", "2024-02", "2024-02", "2024-02", "2024-02", "2024-03", "2024-03", "2024-03", "2024-03", "2024-03", "2024-04", "2024-04", "2024-04", "2024-04", "2024-05", "2024-05", "2024-05", "2024-05", "2024-06", "2024-06", "2024-06", "2024-06", "2024-06", "2024-07", "2024-07", "2024-07", "2024-07", "2024-08", "2024-08", "2024-08", "2024-08", "2024-09", "2024-09", "2024-09", "2024-09", "2024-09", "2024-10", "2024-10", "2024-10", "2024-10", "2024-11", "2024-11", "2024-11", "2024-11", "2024-12", "2024-12", "2024-12", "2024-12", "2024-12", "2025-01", "2025-01", "2025-01", "2025-01", "2025-02", "2025-02", "2025-02", "2025-02", "2025-03", "2025-03", "2025-03", "2025-03", "2025-03", "2025-04", "2025-04", "2025-04", "2025-04", "2025-05", "2025-05", "2025-05", "2025-05", "2025-06", "2025-06", "2025-06", "2025-06", "2025-06", "2025-07", "2025-07", "2025-07", "2025-07", "2025-08", "2025-08", "2025-08", "2025-08", "2025-08", "2025-09", "2025-09", "2025-09", "2025-09", "2025-10", "2025-10", "2025-10", "2025-10", "2025-11", "2025-11", "2025-11", "2025-11", "2025-11", "2025-12", "2025-12", "2025-12", "2025-12", "2026-01", "2026-01", "2026-01", "2026-01", "2026-02", "2026-02", "2026-02", "2026-02", "2026-03", "2026-03", "2026-03", "2026-03", "2026-03", "2026-04", "2026-04"];
+const eqValues = [1000864.0, 996724.0, 1018850.0, 1047409.0, 1050761.0, 1102181.0, 1100857.0, 1124542.0, 1139044.0, 1136125.0, 1160058.0, 1168074.0, 1168315.0, 1199724.0, 1206683.0, 1182771.0, 1182913.0, 1179636.0, 1193996.0, 1214082.0, 1218731.0, 1217138.0, 1209604.0, 1223277.0, 1223071.0, 1217315.0, 1248589.0, 1264808.0, 1317300.0, 1345267.0, 1443013.0, 1420196.0, 1468487.0, 1475357.0, 1450781.0, 1460381.0, 1439674.0, 1461440.0, 1478366.0, 1497321.0, 1507050.0, 1590450.0, 1613821.0, 1612862.0, 1604141.0, 1634470.0, 1664090.0, 1672351.0, 1683414.0, 1683603.0, 1781763.0, 1716744.0, 1734791.0, 1730064.0, 1718702.0, 1705618.0, 1719587.0, 1626287.0, 1679829.0, 1705199.0, 1706130.0, 1709717.0, 1734812.0, 1723890.0, 1725546.0, 1733470.0, 1748834.0, 1755185.0, 1737240.0, 1727955.0, 1701168.0, 1697433.0, 1696334.0, 1740442.0, 1746720.0, 1764548.0, 1781588.0, 1788429.0, 1808269.0, 1778659.0, 1769633.0, 1763656.0, 1763028.0, 1786031.0, 1796582.0, 1767793.0, 1759771.0, 1780751.0, 1759166.0, 1770361.0, 1788418.0, 1784259.0, 1777645.0, 1846377.0, 1802644.0, 1826352.0, 1849126.0, 1863337.0, 1887113.0, 1892507.0, 1868811.0, 1862918.0, 1873711.0, 1872494.0, 1841334.0, 1835086.0, 1837150.0, 1828138.0, 1829868.0, 1822945.0, 1810111.0, 1806567.0, 1802986.0, 1810213.0, 1816786.0, 1787895.0, 1792482.0, 1826234.0, 1813761.0, 1827865.0, 1815853.0, 1811194.0, 1762870.0, 1769415.0, 1786199.0, 1788248.0, 1803211.0, 1808142.0, 1858071.0, 1856403.0, 1872510.0, 1874672.0, 1917542.0, 1906400.0, 1926769.0, 1921693.0, 1916459.0, 1917305.0, 1946705.0, 1921284.0, 1935288.0, 1926353.0, 1934951.0, 1704276.0, 1698922.0, 1716554.0, 1763797.0, 1766239.0, 1781875.0, 1797690.0, 1792137.0, 1893090.0, 1897662.0, 1917335.0, 1927646.0, 1986936.0, 2016415.0, 1981535.0, 2247774.0, 2243151.0, 2235971.0, 2273704.0, 2283823.0, 2306083.0, 2310628.0, 2316588.0, 2240397.0, 2231445.0, 2214679.0, 2230564.0, 2226317.0, 2233060.0, 2225172.0, 2186430.0, 2200782.0, 2199652.0, 2202936.0, 2205862.0, 2214857.0, 2264772.0, 2286808.0, 2294371.0, 2237721.0, 2227672.0, 2270377.0, 2274983.0, 2285539.0, 2280930.0, 2308274.0, 2307206.0, 2255694.0, 2258569.0, 2319201.0, 2258105.0, 2308076.0, 2427830.0, 2428979.0, 2405279.0, 2418405.0, 2428361.0, 2438339.0, 2479964.0, 2563074.0, 2599885.0, 2626014.0, 2602358.0, 2596195.0, 2590073.0, 2594483.0, 2574636.0, 2535999.0, 2584525.0, 2616067.0, 2628353.0, 2669511.0, 2710875.0, 2714405.0, 2752110.0, 2748653.0, 2783292.0, 2781299.0, 2736136.0, 2736762.0, 2699073.0, 2682219.0, 2636340.0, 2540242.0, 2521384.0, 2539727.0, 2588463.0, 2585447.0, 2597354.0, 2519360.0, 2504063.0, 2535644.0, 2559892.0, 2527722.0, 2545998.0, 2565549.0, 2632327.0, 2576841.0, 2581967.0, 2579793.0, 2613915.0, 2664518.0, 2679882.0, 2632677.0, 2609825.0, 2607311.0, 2643601.0, 2689582.0, 2650442.0, 2620123.0, 2702438.0, 2704911.0, 2717322.0, 2712659.0, 2702983.0, 2794930.0, 2801629.0, 2844752.0, 2804056.0, 2771687.0, 2762625.0, 2711875.0, 2679585.0, 2785040.0, 2663082.0, 2915843.0, 3165203.0, 3372112.0, 3308149.0, 3496217.0, 3372659.0, 3200148.0, 3401244.0, 3433668.0, 3479151.0, 3544780.0, 3491810.0, 3953077.0, 4003248.0, 4288977.0, 4423607.0, 4422380.0, 4354166.0, 4428064.0, 4394069.0, 4500106.0, 4554887.0, 4615537.0, 4611710.0, 4994579.0, 5090665.0, 5026960.0, 4920843.0, 4898523.0, 4863550.0, 4791372.0, 4836886.0, 4842261.0, 4754252.0, 4717304.0, 4763117.0, 4739680.0, 4764026.0, 4842846.0, 4838880.0, 4860706.0, 4868618.0, 4936979.0, 5027137.0, 4874502.0, 5012451.0, 4870767.0, 4911446.0, 4908750.0, 4743941.0, 4725445.0, 4773383.0, 4918999.0, 4949114.0, 4944944.0, 4937672.0, 4812141.0, 5031780.0, 5068412.0, 5236847.0, 5387491.0, 5377118.0, 5431595.0, 5447314.0, 5305064.0, 5377846.0, 5811065.0, 5895706.0, 6063779.0, 6098342.0, 6231722.0, 6303289.0, 6426809.0, 6671419.0, 6599794.0, 6735066.0, 6787036.0, 6899818.0, 6988817.0, 6931275.0, 6979813.0, 6954823.0, 6919732.0, 7144814.0, 7211612.0, 7350487.0, 7263937.0, 7291149.0, 7321832.0, 7415306.0, 7393859.0, 7433049.0, 7513751.0, 7545665.0, 7619216.0, 7638649.0, 7677073.0, 7813715.0, 7921796.0, 7952688.0, 7869149.0, 7789659.0, 8066672.0, 8446533.0, 8505623.0, 8562150.0, 8635019.0, 8567292.0, 8457064.0, 8587084.0, 8540814.0, 9002994.0, 8596078.0, 8466893.0, 8418375.0, 8456084.0, 8528625.0, 9049909.0, 8904339.0, 8958988.0, 9138189.0, 9206165.0, 9228030.0, 8992108.0, 8946077.0, 9052037.0, 8997586.0, 9078212.0, 9522567.0, 9518828.0, 9632186.0, 9704782.0, 9678553.0, 9614863.0, 9774203.0, 9763148.0, 9698012.0, 9786809.0, 9735674.0, 9824905.0, 9871968.0, 9884970.0, 9830190.0, 9862741.0, 9941224.0, 10044362.0, 10066940.0, 10047956.0, 10091943.0, 9300779.0, 9820647.0, 9553837.0, 9512566.0, 9434054.0, 9506170.0, 9464036.0, 9444851.0, 9557791.0, 9747822.0, 9852971.0, 9957434.0, 9972020.0, 9959931.0, 9875641.0, 9853239.0, 9926495.0, 9914218.0, 9890403.0, 9909409.0, 9968464.0, 9940893.0, 10010191.0, 9995394.0, 9957735.0, 9929214.0, 9902695.0, 10009396.0, 10182580.0, 10128037.0, 10251073.0, 10469263.0, 10314815.0, 10406065.0, 10521542.0, 10455577.0, 10542817.0, 10480988.0, 10505573.0, 10717139.0, 10703693.0, 10783939.0, 10843870.0, 10944567.0, 10415120.0, 10459343.0, 10480812.0, 11093154.0, 11097128.0, 11067272.0, 11031528.0, 10995887.0, 11915194.0, 11949161.0, 11894483.0, 12210337.0, 12139959.0, 12157646.0, 12195863.0, 12629171.0, 12688020.0, 12916287.0, 12699469.0, 12579877.0, 13222473.0, 13160545.0, 13484890.0, 13479336.0, 13168170.0, 12997940.0, 12960588.0, 11872253.0, 12053659.0, 12085376.0, 12239747.0, 12112223.0, 12013178.0, 12148078.0, 12286857.0, 12161333.0, 12392833.0, 12592651.0, 12677808.0, 12683275.0, 12761594.0, 12761920.0, 12672298.0, 12670795.0, 12783053.0, 12915505.0, 12713234.0, 12775353.0, 12719710.0, 12915109.0, 12991362.0, 13362506.0, 13261777.0, 13584673.0, 13684715.0, 13894875.0, 13881578.0, 13850908.0, 13798953.0, 13674417.0, 13665841.0, 13748247.0, 13912360.0, 14033049.0, 14230366.0, 14295432.0, 14519407.0, 14407895.0, 14691442.0, 14803289.0, 14989208.0, 16329472.0, 16422134.0, 16493667.0, 16526745.0, 17758371.0, 17572503.0, 17707121.0, 17663922.0, 17680442.0, 17977958.0, 17998961.0, 18122483.0, 18080146.0, 17910282.0, 17964105.0, 17850608.0, 17847012.0, 17940367.0, 17844624.0, 17547981.0, 17596093.0, 18071743.0, 18069078.0, 17860344.0, 17761895.0, 17793866.0, 17753208.0, 17911418.0, 17814848.0, 17665477.0, 17443909.0, 17532103.0, 17498220.0, 17720037.0, 17720997.0, 17646825.0, 17680354.0, 17731842.0, 17847117.0, 17755621.0, 17879312.0, 17898473.0, 17478183.0, 17472181.0, 17382478.0, 17353599.0, 17367403.0, 17573685.0, 17834144.0, 17810015.0, 17501630.0, 17775224.0, 17470846.0];
+const ddValues = [0.0, -0.6, -0.56, 0.0, -0.37, -1.89, -0.51, 0.0, -0.01, -0.26, 0.0, 0.0, -0.48, -0.0, -1.22, -1.98, -1.97, -2.51, -2.4, -1.6, -0.58, -0.66, -1.49, -1.12, -1.16, -1.96, -1.11, 0.0, 0.0, -1.22, -0.31, -2.06, -0.82, 0.0, -1.67, -1.43, -2.42, -1.78, -1.07, -0.13, -0.21, 0.0, -0.21, -0.43, -1.1, -0.67, -0.4, -0.01, 0.0, -2.74, -0.27, -4.07, -3.62, -4.65, -3.96, -9.97, -4.85, -9.17, -9.95, -6.17, -4.75, -5.58, -4.44, -3.67, -3.58, -3.81, -3.51, -2.03, -2.92, -3.44, -5.55, -5.15, -5.59, -3.88, -3.35, -1.67, -2.71, -0.07, -0.29, -1.65, -2.59, -2.48, -2.51, -2.25, -0.92, -2.25, -2.69, -2.6, -2.73, -2.19, -1.84, -1.34, -1.7, -2.85, -6.01, -4.34, -3.59, -2.61, -1.98, -0.42, -1.67, -1.98, -2.18, -1.48, -3.15, -3.45, -3.43, -4.84, -3.8, -4.08, -4.76, -4.95, -5.39, -4.83, -5.16, -5.93, -5.85, -5.29, -4.88, -4.24, -4.84, -5.28, -7.29, -7.93, -6.49, -6.02, -5.83, -4.87, -3.09, -2.36, -2.0, -1.36, -1.36, -1.59, -1.16, -0.85, -1.07, -1.03, -0.68, -1.37, -0.59, -1.07, -0.6, -12.45, -13.0, -12.71, -10.7, -9.57, -9.08, -7.94, -7.94, -2.95, -2.52, -2.07, -1.56, 0.0, 0.0, -1.73, -1.01, -1.21, -1.75, -1.72, -0.44, -0.47, -0.44, -0.49, -3.47, -4.12, -4.77, -4.18, -4.07, -4.27, -4.46, -5.79, -6.08, -5.22, -5.18, -5.44, -4.97, -4.27, -1.99, -1.68, -3.83, -4.66, -3.97, -1.98, -2.15, -1.86, -1.24, -0.59, -2.81, -3.05, -1.59, -3.74, -4.71, -1.06, -1.75, -1.43, -1.0, -0.95, -0.81, -1.01, -0.86, 0.0, 0.0, -1.47, -1.14, -1.44, -2.23, -2.04, -3.43, -4.68, -1.28, -0.51, -0.16, -1.09, -0.18, -0.44, -0.13, 0.0, -0.29, -1.69, -2.34, -3.03, -3.77, -8.11, -8.87, -9.41, -9.09, -9.1, -7.11, -6.8, -9.48, -10.03, -9.65, -8.93, -9.76, -10.45, -8.46, -5.69, -7.5, -7.31, -8.08, -6.29, -6.21, -4.73, -5.41, -6.66, -7.0, -6.1, -5.17, -4.77, -5.86, -5.33, -2.82, -2.73, -2.54, -2.98, -3.05, -1.6, -0.24, -1.43, -2.57, -2.89, -4.93, -5.81, -3.9, -8.33, -5.57, -4.18, 0.0, -4.12, -2.08, -5.54, -10.37, -12.87, -5.34, -3.05, -3.43, -3.54, -0.26, -2.33, -2.16, -1.17, -1.2, -2.72, -2.0, -1.83, -0.7, -0.67, -0.02, -0.41, -0.71, -0.6, -1.85, -3.92, -4.61, -5.04, -6.81, -6.31, -7.2, -7.17, -8.24, -8.42, -7.45, -6.98, -7.11, -5.57, -6.84, -5.37, -4.5, -3.53, -4.82, -2.93, -5.63, -4.96, -4.67, -7.37, -8.67, -7.58, -7.29, -4.02, -3.88, -3.78, -7.81, -4.26, -1.93, -0.77, -0.53, -1.06, -1.02, -0.47, -4.36, -1.9, -0.27, -0.17, -0.32, 0.0, -0.43, -0.22, 0.0, 0.0, -1.85, -0.29, -0.47, -0.32, -0.91, -1.78, -0.55, -1.31, -2.62, -1.61, -1.29, 0.0, -1.82, -0.99, -3.02, -2.66, -2.14, -1.55, -0.94, -0.66, -0.6, -0.15, -0.31, -1.55, -0.09, -0.23, -1.35, -4.2, -1.22, 0.0, -0.09, 0.0, -0.19, -1.06, -2.53, -2.36, -2.61, -0.87, -4.62, -6.32, -8.14, -8.84, -5.95, -4.93, -1.77, -1.17, -1.44, -0.37, -0.3, -2.67, -3.73, -3.28, -2.97, -2.89, -0.01, -0.15, -0.23, -0.16, -0.83, -1.59, -1.87, -0.58, -1.3, -1.02, -0.86, -0.1, -0.12, -0.06, -0.77, -0.44, -0.12, -0.37, -0.34, -0.62, -0.38, -8.47, -9.3, -6.56, -6.39, -7.45, -7.53, -7.02, -7.68, -6.05, -5.56, -3.91, -3.94, -1.87, -1.99, -2.81, -3.48, -4.07, -4.68, -3.26, -2.48, -1.95, -2.21, -1.49, -2.21, -2.56, -2.29, -3.12, -1.85, -0.29, -0.54, -1.14, -0.04, -1.52, -2.4, 0.0, -0.63, -0.14, -0.98, -0.5, -0.79, -1.18, -0.84, -0.91, 0.0, -4.95, -5.01, -4.41, -2.72, -0.1, -0.74, -0.78, -1.59, 0.0, -0.14, -1.29, -1.52, -0.79, -0.99, -0.71, -0.41, -0.41, -0.3, -1.8, -2.6, -1.24, -1.22, 0.0, -0.86, -2.39, -4.2, -3.93, -11.99, -11.68, -10.65, -10.41, -10.22, -10.98, -10.73, -9.42, -9.85, -10.09, -7.65, -6.41, -6.22, -5.92, -5.65, -6.06, -6.08, -5.46, -4.77, -5.76, -5.52, -6.14, -4.26, -3.92, -3.18, -4.7, -4.07, -2.35, -0.15, -0.25, -0.64, -1.07, -3.62, -2.44, -1.82, -1.34, -0.34, 0.0, 0.0, -0.03, -1.76, -0.01, -0.17, -0.44, -0.14, -0.07, -0.95, -0.52, 0.0, -1.83, -1.08, -0.9, -0.61, -0.85, -0.58, -0.16, -0.42, -1.35, -1.17, -1.68, -2.21, -1.37, -1.72, -3.6, -3.2, -3.21, -0.84, -1.63, -3.15, -2.0, -2.34, -2.41, -1.88, -2.77, -3.92, -4.7, -3.62, -3.39, -2.4, -3.14, -2.7, -2.7, -1.7, -2.21, -2.31, -2.14, -3.73, -4.44, -4.85, -4.42, -4.75, -3.21, -1.77, -2.06, -3.97, -5.08, -3.77];
+
+const fontMono = "'IBM Plex Mono', monospace";
+
+new Chart(document.getElementById('equityChart'), {
   type:'line',
-  data:{labels:eqLabels,datasets:[{data:eqVals,borderColor:'#1D9E75',borderWidth:1.5,pointRadius:0,tension:0.2,
-    backgroundColor:isDark?'rgba(29,158,117,0.07)':'rgba(29,158,117,0.06)',fill:true}]},
-  options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>ctx.parsed.y.toFixed(2)+'x'}}},
+  data:{ labels:eqLabels, datasets:[{
+    data:eqValues, borderColor:'#d4a843', borderWidth:1.6,
+    backgroundColor:'rgba(212,168,67,0.07)', fill:true, pointRadius:0, tension:0.15
+  }]},
+  options:{
+    responsive:true,
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` ₹${(c.raw/100000).toFixed(2)}L`}}},
     scales:{
-      x:{grid:{color:gridC},ticks:{color:tickC,font:{size:10},maxTicksLimit:12,maxRotation:0}},
-      y:{grid:{color:gridC},ticks:{color:tickC,font:{size:10},callback:v=>v.toFixed(1)+'x'}}
-    }}
+      x:{ ticks:{ color:'#9aa3ad', font:{family:fontMono, size:9}, maxTicksLimit:10 }, grid:{color:'#1a2029'} },
+      y:{ ticks:{ color:'#9aa3ad', font:{family:fontMono, size:9}, callback:v=>'₹'+(v/100000).toFixed(0)+'L' }, grid:{color:'#1a2029'} }
+    }
+  }
 });
 
-const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-const YEARS=[...new Set(MO.map(d=>d[0].slice(0,4)))];
-const lkp={};
-MO.forEach(([dt,r])=>lkp[dt]=r);
-
-function cellBg(r){
-  if(r===undefined) return isDark?'#222':'#f0eeea';
-  if(r>=0.15) return '#085041';
-  if(r>=0.05) return '#1D9E75';
-  if(r>=0.00) return '#9FE1CB';
-  if(r>=-0.05) return '#F5C4B3';
-  return '#D85A30';
-}
-function cellTxt(r){
-  if(r===undefined) return isDark?'#444':'#ccc';
-  if(r>=0.05) return '#E1F5EE';
-  if(r>=0.00) return '#085041';
-  return '#4A1B0C';
-}
-
-const tbl=document.getElementById('heatmap');
-let hdr='<tr><td style="width:28px;"></td>';
-YEARS.forEach(y=>hdr+=`<td style="text-align:center;color:var(--color-text-tertiary);font-size:10px;padding-bottom:3px;">${y}</td>`);
-tbl.innerHTML=hdr+'</tr>';
-
-MONTHS.forEach((m,mi)=>{
-  let row=`<tr><td style="color:var(--color-text-tertiary);font-size:10px;text-align:right;padding-right:4px;white-space:nowrap;">${m}</td>`;
-  YEARS.forEach(y=>{
-    const key=`${y}-${String(mi+1).padStart(2,'0')}`;
-    const r=lkp[key];
-    const bg=cellBg(r);
-    const tc=cellTxt(r);
-    const lbl=r!==undefined?(r>=0?'+':'')+Math.round(r*100)+'%':'';
-    row+=`<td style="width:40px;height:22px;background:${bg};color:${tc};text-align:center;border-radius:3px;font-size:9px;font-family:var(--font-mono);" title="${key}: ${lbl}">${lbl}</td>`;
-  });
-  tbl.innerHTML+=row+'</tr>';
-});
-
-const yg=document.getElementById('yr-grid');
-YR.forEach(d=>{
-  const ann=MO.filter(([dt])=>dt.startsWith(d.y)).reduce((a,[,r])=>a*(1+r),1)-1;
-  const c=ann>0?'#1D9E75':'#D85A30';
-  const card=document.createElement('div');
-  card.style.cssText='background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:10px 12px;';
-  card.innerHTML=`<p style="font-size:12px;color:var(--color-text-secondary);margin:0 0 3px;">${d.y}</p>
-    <p style="font-size:16px;font-weight:500;font-family:var(--font-mono);color:${c};margin:0 0 2px;">${p(ann,1)}</p>
-    <p style="font-size:10px;color:var(--color-text-tertiary);margin:0;">${d.t.toLocaleString()} trades &middot; ${Math.round(d.wr*100)}% win</p>`;
-  yg.appendChild(card);
+new Chart(document.getElementById('ddChart'), {
+  type:'line',
+  data:{ labels:eqLabels, datasets:[{
+    data:ddValues, borderColor:'#c0673e', borderWidth:1.2,
+    backgroundColor:'rgba(192,103,62,0.18)', fill:true, pointRadius:0, tension:0.1
+  }]},
+  options:{
+    responsive:true,
+    plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>` ${c.raw.toFixed(1)}%`}}},
+    scales:{
+      x:{ ticks:{ color:'#9aa3ad', font:{family:fontMono, size:9}, maxTicksLimit:10 }, grid:{color:'#1a2029'} },
+      y:{ ticks:{ color:'#9aa3ad', font:{family:fontMono, size:9}, callback:v=>v+'%' }, grid:{color:'#1a2029'} }
+    }
+  }
 });
 </script>
+</body>
+</html>
