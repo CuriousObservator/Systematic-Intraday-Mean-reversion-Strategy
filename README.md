@@ -1,5 +1,5 @@
 # Systematic-Intraday-Mean-reversion-Strategy
-A systematic, market-neutral intraday strategy for Indian equities — an overnight-gap reversion signal, deployed under realistic capital constraints across **118 NSE constituents** and **11+ years** of daily data.
+A systematic, market-neutral intraday strategy for Indian equities — an overnight-gap reversion signal, deployed under realistic capital constraints across **100 NSE constituents** and **11+ years** of daily data.
 
 DASHBOARD: https://curiousobservator.github.io/Systematic-Intraday-Mean-reversion-Strategy/
 
