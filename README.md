@@ -124,7 +124,7 @@ All figures in the dashboard are net of the assumed transaction cost and compute
 ## Tech Stack
 
 - **Python** — NumPy, Pandas, Matplotlib
-- **Data** — Daily OHLC, NSE universe (118 constituents)
+- **Data** — Daily OHLC, NSE universe (100 constituents)
 - **Analysis** — Position-sizing simulation, threshold-based signal ranking, rolling equity/drawdown, monthly/yearly attribution
 
 ---
